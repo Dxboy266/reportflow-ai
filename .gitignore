@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Config with sensitive data
+config.json
+
+# Data directory (optional - uncomment if you don't want to track reports)
+# data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

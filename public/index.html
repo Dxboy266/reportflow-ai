@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 日报周报生成器</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="markdown.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <span class="icon">🗓️</span>
+                <h1>AI 日报周报生成器</h1>
+            </div>
+            <button id="btn-settings" class="icon-btn" title="设置">⚙️</button>
+        </header>
+
+        <main>
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="daily">📝 写日报</button>
+                <button class="tab-btn" data-tab="weekly">📊 生成周报</button>
+            </div>
+
+            <!-- Daily Report Section -->
+            <section id="daily-section" class="tab-content active">
+                <div class="input-area">
+                    <label for="daily-input">今日工作内容：</label>
+                    <textarea id="daily-input" placeholder="1. 完成了... 2. 修复了... 3. 参加了..."></textarea>
+
+                    <div class="controls">
+                        <div class="style-select">
+                            <span>风格：</span>
+                            <select id="daily-style">
+                                <option value="formal">正式得体</option>
+                                <option value="tech">技术专业</option>
+                                <option value="casual">轻松自然</option>
+                            </select>
+                        </div>
+                        <button id="btn-generate-daily" class="primary-btn">✨ 生成日报</button>
+                    </div>
+                </div>
+
+                <div class="preview-area" id="daily-preview-container" style="display: none;">
+                    <div class="preview-header">
+                        <h3>📄 生成结果预览</h3>
+                    </div>
+                    <!-- Rendered Markdown Container -->
+                    <div id="daily-output-render" class="rendered-preview markdown-body"></div>
+
+                    <div class="action-buttons">
+                        <button id="btn-regenerate-daily" class="secondary-btn">🔄 重新生成</button>
+                        <button id="btn-save-daily" class="success-btn">✅ 采用并保存</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Weekly Report Section -->
+            <section id="weekly-section" class="tab-content">
+                <div class="weekly-intro">
+                    <p>将自动读取本周已保存的日报，汇总生成周报。</p>
+                    <div class="controls">
+                        <div class="style-select">
+                            <span>风格：</span>
+                            <select id="weekly-style">
+                                <option value="formal">正式得体</option>
+                                <option value="tech">技术专业</option>
+                                <option value="casual">轻松自然</option>
+                            </select>
+                        </div>
+                        <button id="btn-generate-weekly" class="primary-btn">📊 生成周报</button>
+                    </div>
+                </div>
+
+                <div class="preview-area" id="weekly-preview-container" style="display: none;">
+                    <div class="preview-header">
+                        <h3>📄 周报预览</h3>
+                    </div>
+                    <textarea id="weekly-output" readonly></textarea>
+                    <div class="action-buttons">
+                        <button id="btn-regenerate-weekly" class="secondary-btn">🔄 重新生成</button>
+                        <button id="btn-save-weekly" class="success-btn">✅ 采用并保存</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section class="history-section">
+                <h3>📚 本周记录</h3>
+                <div id="history-list" class="history-list">
+                    <!-- History items will be injected here -->
+                    <div class="loading">加载中...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>AI 模型配置</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="provider-select">AI 服务商</label>
+                    <select id="provider-select">
+                        <option value="deepseek">DeepSeek (深度求索)</option>
+                        <option value="siliconflow">SiliconFlow (硅基流动)</option>
+                        <option value="openai">OpenAI (GPT-4/3.5)</option>
+                        <option value="local">本地模型 (Ollama/LM Studio)</option>
+                        <option value="antigravity">Antigravity (Anthropic 协议)</option>
+                        <option value="custom">自定义 (Custom)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="api-base-url">API Base URL</label>
+                    <input type="text" id="api-base-url" placeholder="https://api.deepseek.com/v1">
+                </div>
+
+                <div class="form-group">
+                    <label for="model-name">模型名称 (Model)</label>
+                    <input type="text" id="model-name" placeholder="deepseek-chat">
+                </div>
+
+                <div class="form-group">
+                    <label for="api-key">API Key</label>
+                    <input type="password" id="api-key" placeholder="sk-...">
+                    <small>密钥仅保存在本地配置文件中，安全无忧</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-settings" class="primary-btn">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Detail Modal -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2 id="report-modal-title">日报详情</h2>
+                <span class="close-report-modal close-modal">&times;</span>
+            </div>
+            <div class="modal-body markdown-body" id="report-modal-body">
+                <!-- Content will be injected here -->
+            </div>
+            <div class="modal-footer">
+                <button id="btn-copy-report" class="secondary-btn">复制内容</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marked for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
