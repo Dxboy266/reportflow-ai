@@ -1,0 +1,136 @@
+/* ===== AI Thinking Process Display ===== */
+
+/* Thinking Box Container */
+.thinking-box {
+    margin: 16px 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Thinking Header (Collapsible Toggle) */
+.thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    color: #a0a0a0;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.thinking-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Collapse/Expand Arrow */
+.thinking-header::before {
+    content: '▶';
+    font-size: 10px;
+    transition: transform 0.2s ease;
+    color: #666;
+}
+
+.thinking-box.expanded .thinking-header::before {
+    transform: rotate(90deg);
+}
+
+/* Thinking Status Text */
+.thinking-status {
+    flex: 1;
+}
+
+/* Thinking Duration Tag */
+.thinking-duration {
+    font-size: 12px;
+    color: #666;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Thinking Content (Collapsible) */
+.thinking-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 16px;
+    color: #888;
+    font-size: 13px;
+    line-height: 1.7;
+    border-top: 1px solid transparent;
+}
+
+.thinking-box.expanded .thinking-content {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Loading State - While still thinking */
+.thinking-box.loading .thinking-header {
+    color: #10a37f;
+}
+
+.thinking-box.loading .thinking-content {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Spinner Animation */
+.thinking-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #10a37f;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Hide spinner when not loading */
+.thinking-box:not(.loading) .thinking-spinner {
+    display: none;
+}
+
+/* Thinking complete icon */
+.thinking-complete-icon {
+    display: none;
+    color: #10a37f;
+}
+
+.thinking-box:not(.loading) .thinking-complete-icon {
+    display: inline;
+}
+
+/* Scrollbar for thinking content */
+.thinking-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.thinking-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.thinking-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.thinking-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}

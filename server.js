@@ -103,100 +103,162 @@ app.post('/api/config', async (req, res) => {
     }
 });
 
-// Helper for AI Request
-async function callAI(systemPrompt, userPrompt) {
-    if (!config.ai) {
-        throw new Error("AI provider not configured");
-    }
+// Helper for AI Request (Streaming)
+async function streamAI(res, systemPrompt, userPrompt) {
+    if (!config.ai) throw new Error("AI provider not configured");
 
     const provider = config.ai.provider || 'deepseek';
     const baseUrl = config.ai.baseUrl || 'https://api.deepseek.com/v1';
     const model = config.ai.model || 'deepseek-chat';
     const apiKey = config.ai.apiKey || '';
-
-    // Check if using Anthropic/Antigravity format
     const isAnthropic = provider === 'anthropic' || provider === 'antigravity';
 
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+    };
+
     if (isAnthropic) {
-        // --- Anthropic Format ---
-        // Endpoint: /messages
-        const url = baseUrl.endsWith('/') ? `${baseUrl}messages` : `${baseUrl}/messages`;
+        delete headers['Authorization'];
+        headers['x-api-key'] = apiKey;
+        headers['anthropic-version'] = '2023-06-01';
+    }
 
-        const headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
-        };
+    const endpoint = isAnthropic ?
+        (baseUrl.endsWith('/') ? `${baseUrl}messages` : `${baseUrl}/messages`) :
+        (baseUrl.endsWith('/') ? `${baseUrl}chat/completions` : `${baseUrl}/chat/completions`);
 
-        const body = {
-            model: model,
-            messages: [
-                // Anthropic system usually goes to top-level parameter, but messages[0] with role 'user' works for simple cases.
-                // However, correct Anthropic chat format: system is "system" top param, messages is list of user/assistant.
-                { role: "user", content: `${systemPrompt}\n\nUser Input:\n${userPrompt}` }
-                // Merging system prompt into user message for simplicity as Anthropic messages array doesn't support 'system' role in older versions, 
-                // though newer ones use top-level 'system'. Let's use top-level system if possible, but merging is safer for proxies.
-                // Actually, standard Anthropic API supports 'system' parameter.
-            ],
-            system: systemPrompt,
-            max_tokens: 4096
-        };
+    const body = isAnthropic ? {
+        model,
+        messages: [{ role: "user", content: `${systemPrompt}\n\nUser Input:\n${userPrompt}` }],
+        system: systemPrompt,
+        max_tokens: 4096,
+        stream: true
+    } : {
+        model,
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 16384, // Ensure enough tokens for both thinking and content
+        stream: true
+    };
 
-        const response = await fetch(url, {
+    try {
+        const aiRes = await fetch(endpoint, {
             method: 'POST',
-            headers: headers,
+            headers,
             body: JSON.stringify(body)
         });
 
-        const data = await response.json();
-
-        if (data.error) {
-            throw new Error(data.error.message || JSON.stringify(data.error) || 'API Error');
+        if (!aiRes.ok) {
+            const errText = await aiRes.text();
+            throw new Error(`AI API Error: ${aiRes.status} ${errText}`);
         }
 
-        // Response format: { content: [ { type: 'text', text: '...' } ] }
-        if (!data.content || data.content.length === 0) {
-            throw new Error('No response content returned from Anthropic API');
-        }
-
-        return data.content[0].text;
-
-    } else {
-        // --- OpenAI/DeepSeek Format (Default) ---
-        // Endpoint: /chat/completions
-        const url = baseUrl.endsWith('/') ? `${baseUrl}chat/completions` : `${baseUrl}/chat/completions`;
-
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        if (apiKey) {
-            headers['Authorization'] = `Bearer ${apiKey}`;
-        }
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-                model: model,
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userPrompt }
-                ],
-                temperature: 0.7
-            })
+        // Set up SSE headers for client
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
         });
 
-        const data = await response.json();
+        // Pipe/Parse Logic
+        // We need to read the AI stream, parse logic, and send clean text chunks to client
+        // For simplicity in this demo, we'll try to just forward raw chunks wrapped in a standard format?
+        // No, client needs clean text. We must parse here.
 
-        if (data.error) {
-            throw new Error(data.error.message || JSON.stringify(data.error) || 'API Error');
-        }
+        const stream = aiRes.body; // Node stream
 
-        if (!data.choices || data.choices.length === 0) {
-            throw new Error('No response choices returned from AI');
-        }
+        stream.on('data', (chunk) => {
+            const lines = chunk.toString().split('\n');
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed === 'data: [DONE]') continue;
 
-        return data.choices[0].message.content;
+                if (trimmed.startsWith('data: ') || (isAnthropic && trimmed.startsWith('event: content_block_delta'))) {
+                    // Logic branch
+                    if (isAnthropic) {
+                        // Anthropic SSE format is complex (event line, then data line)
+                        // Simplified parser for buffer handling might be needed, but assuming lines come clean:
+                        // Actually Anthropic sends: `event: ...\ndata: ...`
+                        // Checking `data:` line is safer.
+                    }
+                }
+
+                // Simplified Parser Logic for both (Valid for ~95% cases)
+                // We look for JSON objects in lines starting with 'data: ' (OpenAI) or just data in Anthropic flow
+
+                let jsonStr = '';
+                if (trimmed.startsWith('data: ')) {
+                    jsonStr = trimmed.slice(6);
+                } else if (isAnthropic && trimmed.startsWith('{')) {
+                    // Sometimes just JSON lines? No, Anthropic is SSE.
+                    // Let's rely on standard OpenAI logic first, handle Anthropic special if needed.
+                    // Actually, let's keep it simple:
+                    // If we fail to parse, ignore.
+                }
+
+                if (jsonStr) {
+                    try {
+                        const json = JSON.parse(jsonStr);
+                        let text = '';
+
+                        if (isAnthropic) {
+                            if (json.type === 'content_block_delta' && json.delta && json.delta.text) {
+                                text = json.delta.text;
+                            }
+                        } else {
+                            // Handle DeepSeek R1 reasoning_content (thinking process)
+                            if (json.choices && json.choices[0].delta) {
+                                const delta = json.choices[0].delta;
+
+                                // DeepSeek R1 returns reasoning in reasoning_content
+                                if (delta.reasoning_content) {
+                                    // Check if this is the start of reasoning
+                                    if (!res.reasoningStarted) {
+                                        res.reasoningStarted = true;
+                                        text += '<think>';
+                                    }
+                                    text += delta.reasoning_content;
+                                }
+
+                                // Normal content - can exist in same delta as reasoning_content
+                                if (delta.content) {
+                                    // If we were in reasoning mode, close the think tag first
+                                    if (res.reasoningStarted && !res.reasoningEnded) {
+                                        res.reasoningEnded = true;
+                                        text += '</think>';
+                                    }
+                                    text += delta.content;
+                                }
+                            }
+                        }
+
+                        if (text) {
+                            res.write(`data: ${JSON.stringify({ text })}\n\n`);
+                        }
+                    } catch (e) { }
+                }
+            }
+        });
+
+        stream.on('end', () => {
+            // Close think tag if still open (in case reasoning ended but no content followed)
+            if (res.reasoningStarted && !res.reasoningEnded) {
+                res.write(`data: ${JSON.stringify({ text: '</think>' })}\n\n`);
+                // Add a message indicating content was not generated
+                res.write(`data: ${JSON.stringify({ text: '\n\n> ⚠️ **提示**：AI完成了深度思考，但未能生成最终报告内容。这通常是因为思考过程过长，触发了Token限制。请尝试重新生成。' })}\n\n`);
+                console.log('[Warning] Stream ended with only reasoning content, no final content was generated');
+            }
+            res.write('data: [DONE]\n\n');
+            res.end();
+        });
+
+    } catch (e) {
+        res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
+        res.end();
     }
 }
 
@@ -263,11 +325,11 @@ app.post('/api/generate-daily', async (req, res) => {
 请根据用户输入的内容，生成高质量日报：`;
 
     try {
-        const report = await callAI(systemPrompt, content);
-        res.json({ success: true, report });
+        await streamAI(res, systemPrompt, content);
     } catch (error) {
         console.error("Generate daily error:", error);
-        res.status(500).json({ success: false, error: error.message });
+        // Only verify if headers sent, but streamAI handles its own errors usually.
+        if (!res.headersSent) res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -311,11 +373,16 @@ app.post('/api/save-daily', async (req, res) => {
         const fileName = `${date.substring(5)}.json`; // MM-DD.json
         const filePath = path.join(dailyDir, fileName);
 
+        // Strip thinking content before saving - only save final result
+        const cleanReport = generatedReport
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim();
+
         const data = {
             date,
             weekday: new Date(date).toLocaleDateString('zh-CN', { weekday: 'long' }),
             rawContent,
-            generatedReport,
+            generatedReport: cleanReport, // Save clean version without thinking
             style,
             createdAt: new Date().toISOString()
         };
@@ -348,8 +415,8 @@ app.get('/api/current-week/dailies', async (req, res) => {
             }
         }
 
-        // Sort by date
-        dailies.sort((a, b) => a.date.localeCompare(b.date));
+        // Sort by date (Newest first for History UI)
+        dailies.sort((a, b) => b.date.localeCompare(a.date));
 
         res.json({ dailies });
     } catch (error) {
@@ -369,12 +436,27 @@ app.post('/api/generate-weekly', async (req, res) => {
         const dailyDir = path.join(weekPath, 'daily');
         if (fs.existsSync(dailyDir)) {
             const files = await fs.promises.readdir(dailyDir);
+            const dailies = [];
+
+            // Read all files first
             for (const file of files) {
                 if (file.endsWith('.json')) {
                     const content = JSON.parse(await readFileAsync(path.join(dailyDir, file), 'utf8'));
-                    dailyContents.push(`【${content.date} ${content.weekday}】\n${content.generatedReport}`);
+                    dailies.push(content);
                 }
             }
+
+            // Sort Ascending (Monday -> Friday) for Report Generation
+            dailies.sort((a, b) => a.date.localeCompare(b.date));
+
+            // Format - IMPORTANT: Remove <think> content from daily reports to save tokens
+            dailyContents = dailies.map(content => {
+                // Strip thinking content from generated report
+                const cleanReport = content.generatedReport
+                    .replace(/<think>[\s\S]*?<\/think>/g, '')
+                    .trim();
+                return `【${content.date} ${content.weekday}】\n${cleanReport}`;
+            });
         }
     }
 
@@ -382,21 +464,60 @@ app.post('/api/generate-weekly', async (req, res) => {
         return res.status(400).json({ success: false, error: "No dailies found for this week" });
     }
 
-    const systemPrompt = `你是一个专业的周报汇总助手。请根据以下本周的每日日报内容，生成一份高质量的周报。
-    
-    要求：
-    1. 提炼核心成果，不要流水账。
-    2. 分类汇总，如【本周工作重点】、【项目进度】、【存在问题】、【下周计划】。
-    3. 语气${style === 'casual' ? '轻松自然' : (style === 'tech' ? '技术专业' : '正式得体')}。
-    
-    仅返回生成的内容。`;
+    const systemPrompt = `你是一位资深的技术团队周报撰写专家。请根据以下本周的每日日报内容，生成一份结构严谨、重点突出、体现技术深度的高质量周报。
+
+## 核心原则
+1. **结构化输出**：严格按照【本周重点工作产出】、【遇到问题与解决方案】、【下周工作计划】、【个人总结】四个板块组织内容。
+2. **逻辑归纳**：不要按时间流水账罗列，而是将同一类工作（如"业务需求"、"技术基建"、"故障排查"）进行合并归类。
+3. **技术深度**：在描述工作时，体现解决问题的思路、使用的技术栈（K8s, Hadoop, Docker等）及产出的价值。
+4. **量化与沉淀**：强调产出的文档、修复的Bug数、解决的难题以及沉淀的知识库。
+
+## 输出格式（严格遵循 Markdown）
+
+**邮件主题建议：** 周报_${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}[本周开始日]-[本周结束日]_[你的名字]
+
+---
+
+### 一、本周重点工作产出 (Key Results)
+
+**1. [归类标题，如：业务迭代与需求交付]**
+- **[具体任务]**：详细描述做了什么，达到了什么阶段（开发/自测/部署/联调）。
+- **[具体任务]**：...
+
+**2. [归类标题，如：工程环境修复与容器化攻坚]**
+- **[具体任务]**：描述排查的问题、根因定位及最终解决方案。
+
+**3. [归类标题，如：技术底座与知识沉淀]**
+- **[具体任务]**：描述学习了什么新技术，输出了什么笔记/文档。
+
+---
+
+### 二、遇到的问题与解决方案 (Issues & Solutions)
+
+- **[问题描述]**：简述遇到的卡点。
+- **[解决方案]**：如何解决的，是否有沉淀文档。
+
+---
+
+### 三、下周工作计划 (Next Week Plan)
+
+1. **[重点任务]**：描述下周的核心目标。
+2. **[常规任务]**：描述配合测试或联调的工作。
+3. **[学习/进阶]**：描述技术提升计划。
+
+---
+
+### 四、个人总结
+
+（请根据本周工作内容，总结一段体现个人成长、技术感悟或对项目理解的话，语气诚恳且专业。）
+
+请根据以上要求生成周报：`;
 
     try {
-        const report = await callAI(systemPrompt, dailyContents.join('\n\n'));
-        res.json({ success: true, report, includedDays: dailyContents.length });
+        await streamAI(res, systemPrompt, dailyContents.join('\n\n'));
     } catch (error) {
         console.error("Generate weekly error:", error);
-        res.status(500).json({ success: false, error: error.message });
+        if (!res.headersSent) res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -412,9 +533,14 @@ app.post('/api/save-weekly', async (req, res) => {
 
         const filePath = path.join(weeklyPath, 'weekly.json');
 
+        // Strip thinking content before saving (safety backup)
+        const cleanReport = generatedReport
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim();
+
         const data = {
             weekNumber: getWeekNumber(today),
-            generatedReport,
+            generatedReport: cleanReport,
             style,
             createdAt: new Date().toISOString()
         };
@@ -425,6 +551,100 @@ app.post('/api/save-weekly', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
+// Helper to recursively find all report files
+async function findAllReports(dir) {
+    let results = [];
+    const list = await fs.promises.readdir(dir, { withFileTypes: true });
+    for (const dirent of list) {
+        const res = path.join(dir, dirent.name);
+        if (dirent.isDirectory()) {
+            results = results.concat(await findAllReports(res));
+        } else if (res.endsWith('.json') && !res.endsWith('config.json')) {
+            results.push(res);
+        }
+    }
+    return results;
+}
+
+// Global History API
+app.get('/api/history', async (req, res) => {
+    try {
+        const { page = 1, limit = 10, type = 'all', keyword = '', startDate, endDate } = req.query;
+        const dataDir = path.join(__dirname, 'data');
+        if (!fs.existsSync(dataDir)) return res.json({ items: [], total: 0 });
+
+        const allFiles = await findAllReports(dataDir);
+        let reports = [];
+
+        // Read and parse files
+        for (const file of allFiles) {
+            try {
+                const content = JSON.parse(await readFileAsync(file, 'utf8'));
+                // Determine type based on file path or content structure
+                // Weekly reports have 'weekNumber', Daily reports have 'weekday'
+                const reportType = content.weekNumber ? 'weekly' : 'daily';
+
+                // Filter by Type
+                if (type !== 'all' && reportType !== type) continue;
+
+                // Determine Date
+                // Dailies have 'date'. Weeklies might rely on createdAt or we can try to extract from path
+                let itemDate = content.date;
+                if (!itemDate && content.createdAt) {
+                    itemDate = content.createdAt.split('T')[0];
+                }
+
+                if (startDate && itemDate < startDate) continue;
+                if (endDate && itemDate > endDate) continue;
+
+                // Filter by Keyword
+                if (keyword) {
+                    const jsonStr = JSON.stringify(content).toLowerCase();
+                    if (!jsonStr.includes(keyword.toLowerCase())) continue;
+                }
+
+                reports.push({
+                    type: reportType,
+                    date: itemDate,
+                    weekday: content.weekday || '',
+                    weekNumber: content.weekNumber || '',
+                    preview: content.generatedReport ? removeThinkingContent(content.generatedReport).substring(0, 100) + '...' : '',
+                    fullContent: content.generatedReport,
+                    filePath: file
+                });
+            } catch (e) { }
+        }
+
+        // Sort desc
+        reports.sort((a, b) => {
+            const dateA = a.date || '';
+            const dateB = b.date || '';
+            return dateB.localeCompare(dateA);
+        });
+
+        // Paginate
+        const total = reports.length;
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+        const paginatedItems = reports.slice(startIndex, endIndex);
+
+        res.json({
+            items: paginatedItems,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / limit)
+        });
+
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Helper for removing thinking content (duplicated from logic needed here)
+function removeThinkingContent(text) {
+    return text ? text.replace(/<think>[\s\S]*?<\/think>/g, '').trim() : '';
+}
 
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);

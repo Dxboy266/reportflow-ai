@@ -1,0 +1,65 @@
+/* ===== OpenAI-Style Confirm Modal ===== */
+#confirm-modal .modal-content {
+    background: #0d0d0d;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    max-width: 420px;
+    box-shadow: 0 16px 70px rgba(0, 0, 0, 0.8);
+    padding: 0;
+}
+
+#confirm-modal .modal-header {
+    padding: 20px 24px 0 24px;
+    border-bottom: none;
+}
+
+#confirm-modal .modal-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#confirm-modal .modal-body {
+    padding: 12px 24px 20px 24px;
+}
+
+#confirm-modal .modal-body p {
+    color: #8e8e8e;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+#confirm-modal .modal-footer {
+    padding: 16px 24px;
+    border-top: none;
+    background: transparent;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#confirm-modal .modal-footer .secondary-btn,
+#confirm-modal .modal-footer .primary-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    min-width: auto;
+    background: #2a2a2a !important;
+    border: none !important;
+    color: #fff !important;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    display: inline-flex;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+#confirm-modal .modal-footer .secondary-btn:hover,
+#confirm-modal .modal-footer .primary-btn:hover {
+    background: #3a3a3a !important;
+}
