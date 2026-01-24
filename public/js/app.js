@@ -665,11 +665,20 @@ function renderHistoryGrid(items, containerId) {
     // Determine layout mode based on container ID 
     const isWeekly = containerId.includes('weekly');
 
+    // Robust Single Item check
+    if (items.length === 1) {
+        container.classList.add('single-item-mode');
+    } else {
+        container.classList.remove('single-item-mode');
+    }
+
     if (isWeekly) {
         container.className = 'history-list-mode'; // Switch to List Mode
         renderWeeklyListMode(items, container);
     } else {
         container.className = 'history-grid-container'; // Keep Grid Mode
+        // Re-apply single mode if it was overwritten
+        if (items.length === 1) container.classList.add('single-item-mode');
         renderDailyGridMode(items, container);
     }
 }
@@ -734,7 +743,10 @@ function renderWeeklyListMode(items, container) {
                 ${summaryHtml}
             </div>
             <div class="list-action">
-                <button class="btn-view-details" title="查看完整周报">📜 详情</button>
+                <button class="btn-view-details" title="查看完整周报">
+                    <svg class="icon-inline" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    详情
+                </button>
             </div>
         `;
 
@@ -938,6 +950,51 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial Load
     fetchDailyHistory();
     fetchWeeklyHistory();
+
+    // Init Custom Selects
+    document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+        const trigger = wrapper.querySelector('.custom-select-trigger');
+        const options = wrapper.querySelectorAll('.custom-option');
+        const hiddenSelect = wrapper.querySelector('select');
+        const selectedText = wrapper.querySelector('.selected-text');
+
+        // Toggle
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close others
+            document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+                if (w !== wrapper) w.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+        });
+
+        // Option Click
+        options.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // UI Update
+                options.forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedText.textContent = option.textContent;
+
+                // Value Sync
+                const value = option.dataset.value;
+                if (hiddenSelect) {
+                    hiddenSelect.value = value;
+                    // Auto-refresh for limit selectors
+                    if (hiddenSelect.id === 'daily-limit') fetchDailyHistory();
+                    if (hiddenSelect.id === 'weekly-limit') fetchWeeklyHistory();
+                }
+
+                wrapper.classList.remove('open');
+            });
+        });
+    });
+
+    // Close on click outside
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
+    });
 });
 
 // Alias for compatibility
@@ -1080,10 +1137,189 @@ function showToast(message, duration = 3000) {
 }
 
 // Events
-btnGenerateDaily.addEventListener('click', generateDaily);
-btnRegenerateDaily.addEventListener('click', generateDaily);
-btnSaveDaily.addEventListener('click', saveDaily);
-
 btnGenerateWeekly.addEventListener('click', generateWeekly);
+btnRegenerateWeekly.addEventListener('click', generateWeekly);
+btnSaveWeekly.addEventListener('click', saveWeekly);
+
+// Add listeners for search/filter inputs to auto-refresh or using button
+document.getElementById('btn-search-daily').addEventListener('click', fetchDailyHistory);
+document.getElementById('btn-search-weekly').addEventListener('click', fetchWeeklyHistory);
+
+// Also support Enter key in search
+document.getElementById('daily-keyword').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') fetchDailyHistory();
+});
+document.getElementById('weekly-keyword').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') fetchWeeklyHistory();
+});
+
+
+/* --- Custom Date Picker Class --- */
+class CustomDatePicker {
+    constructor() {
+        this.popup = null;
+        this.currentInput = null;
+        this.currentDate = new Date();
+        this.init();
+    }
+
+    init() {
+        // Create Popup HTML
+        this.popup = document.createElement('div');
+        this.popup.className = 'calendar-popup';
+        this.popup.innerHTML = `
+            <div class="calendar-header">
+                <button class="calendar-btn prev-month">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <div class="calendar-title"></div>
+                <button class="calendar-btn next-month">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+            <div class="calendar-weekdays">
+                <div class="calendar-weekday">日</div>
+                <div class="calendar-weekday">一</div>
+                <div class="calendar-weekday">二</div>
+                <div class="calendar-weekday">三</div>
+                <div class="calendar-weekday">四</div>
+                <div class="calendar-weekday">五</div>
+                <div class="calendar-weekday">六</div>
+            </div>
+            <div class="calendar-grid"></div>
+        `;
+        document.body.appendChild(this.popup);
+
+        // Navigation Events
+        this.popup.querySelector('.prev-month').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.changeMonth(-1);
+        });
+        this.popup.querySelector('.next-month').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.changeMonth(1);
+        });
+
+        // Global Click Management
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('date-input')) {
+                e.preventDefault(); // Stop native picker
+                this.show(e.target);
+            } else if (this.popup.classList.contains('show') && !this.popup.contains(e.target) && e.target !== this.currentInput) {
+                this.hide();
+            }
+        });
+
+        // Prevent native picker on inputs
+        document.querySelectorAll('.date-input').forEach(input => {
+            input.addEventListener('click', (e) => {
+                e.preventDefault();
+                // On mobile, blur to prevent keyboard
+                input.blur();
+            });
+            input.addEventListener('pointerdown', (e) => e.preventDefault()); // Stronger prevention
+        });
+    }
+
+    show(input) {
+        if (this.currentInput === input && this.popup.classList.contains('show')) return;
+
+        this.currentInput = input;
+
+        // Parse current value or default to today
+        const val = input.value;
+        if (val) {
+            const parts = val.split('-');
+            this.currentDate = new Date(parts[0], parts[1] - 1, parts[2]);
+        } else {
+            this.currentDate = new Date();
+        }
+
+        this.render();
+
+        // Position
+        const rect = input.getBoundingClientRect();
+        this.popup.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+        const leftPos = rect.left + window.scrollX;
+
+        // Prevent overflow right
+        if (leftPos + 280 > window.innerWidth) {
+            this.popup.style.left = (window.innerWidth - 290) + 'px';
+        } else {
+            this.popup.style.left = leftPos + 'px';
+        }
+
+        this.popup.classList.add('show');
+    }
+
+    hide() {
+        this.popup.classList.remove('show');
+    }
+
+    changeMonth(delta) {
+        this.currentDate.setMonth(this.currentDate.getMonth() + delta);
+        this.render();
+    }
+
+    render() {
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+
+        // Update Title
+        this.popup.querySelector('.calendar-title').textContent = `${year}年${month + 1}月`;
+
+        // Generate Grid
+        const grid = this.popup.querySelector('.calendar-grid');
+        grid.innerHTML = '';
+
+        // First day of month
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // Empty slots
+        for (let i = 0; i < firstDay; i++) {
+            const div = document.createElement('div');
+            div.className = 'calendar-day empty';
+            grid.appendChild(div);
+        }
+
+        // Days
+        // Get Today for highlighting "Today"
+        const now = new Date();
+        const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+        const todayDate = now.getDate();
+
+        // Get Selected Date
+        let selectedDay = -1;
+        if (this.currentInput && this.currentInput.value) {
+            const parts = this.currentInput.value.split('-');
+            if (parseInt(parts[0]) === year && parseInt(parts[1]) - 1 === month) {
+                selectedDay = parseInt(parts[2]);
+            }
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const div = document.createElement('div');
+            div.className = 'calendar-day';
+            div.textContent = d;
+
+            if (isCurrentMonth && d === todayDate) div.classList.add('today');
+            if (d === selectedDay) div.classList.add('selected');
+
+            div.onclick = (e) => {
+                e.stopPropagation();
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                this.currentInput.value = dateStr;
+                // Trigger change event
+                this.currentInput.dispatchEvent(new Event('change'));
+                this.hide();
+            };
+            grid.appendChild(div);
+        }
+    }
+}
+
+// Initialize
+const datePicker = new CustomDatePicker();
 btnRegenerateWeekly.addEventListener('click', generateWeekly);
 btnSaveWeekly.addEventListener('click', saveWeekly);

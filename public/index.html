@@ -4,32 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 日报周报生成器</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="markdown.css">
-    <link rel="stylesheet" href="confirm-modal.css">
-    <link rel="stylesheet" href="thinking.css">
-    <link rel="stylesheet" href="history.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>ReportFlow AI - 智能周报生成器</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/markdown.css">
+    <link rel="stylesheet" href="css/confirm-modal.css">
+    <link rel="stylesheet" href="css/thinking.css">
+    <link rel="stylesheet" href="css/history.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
+    <div class="app-background"></div>
     <div class="app-container">
         <!-- Header -->
         <header>
             <div class="logo">
-                <span class="icon">🗓️</span>
-                <h1>AI 日报周报生成器</h1>
+                <img src="images/logo.svg" alt="Logo" class="brand-logo">
+                <div class="brand-text">
+                    <h1>ReportFlow <span class="brand-highlight">AI</span></h1>
+                    <span class="brand-subtitle">智能 · 高效 · 深度</span>
+                </div>
             </div>
-            <button id="btn-settings" class="icon-btn" title="设置">⚙️</button>
+            <button id="btn-settings" class="icon-btn glass-btn" title="设置">
+                <span style="font-size: 1.2rem;">⚙️</span>
+            </button>
         </header>
 
         <main>
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab-btn active" data-tab="daily">📝 写日报</button>
-                <button class="tab-btn" data-tab="weekly">📊 生成周报</button>
+                <button class="tab-btn active" data-tab="daily">
+                    <svg class="icon-inline" viewBox="0 0 24 24">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    写日报
+                </button>
+                <button class="tab-btn" data-tab="weekly">
+                    <svg class="icon-inline" viewBox="0 0 24 24">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    生成周报
+                </button>
             </div>
+
+
 
             <!-- Daily Report Section -->
             <section id="daily-section" class="tab-content active">
@@ -40,13 +63,30 @@
                     <div class="controls">
                         <div class="style-select">
                             <span>风格：</span>
-                            <select id="daily-style">
-                                <option value="formal">正式得体</option>
-                                <option value="tech">技术专业</option>
-                                <option value="casual">轻松自然</option>
-                            </select>
+                            <div class="custom-select-wrapper" id="daily-style-wrapper">
+                                <div class="custom-select-trigger">
+                                    <span class="selected-text">正式得体</span>
+                                </div>
+                                <div class="custom-options">
+                                    <div class="custom-option selected" data-value="formal">正式得体</div>
+                                    <div class="custom-option" data-value="tech">技术专业</div>
+                                    <div class="custom-option" data-value="casual">轻松自然</div>
+                                </div>
+                                <select id="daily-style" style="display:none">
+                                    <option value="formal" selected>正式得体</option>
+                                    <option value="tech">技术专业</option>
+                                    <option value="casual">轻松自然</option>
+                                </select>
+                            </div>
                         </div>
-                        <button id="btn-generate-daily" class="primary-btn">✨ 生成日报</button>
+                        <button id="btn-generate-daily" class="primary-btn">
+                            <svg class="icon-inline" viewBox="0 0 24 24">
+                                <path
+                                    d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z">
+                                </path>
+                            </svg>
+                            生成日报
+                        </button>
                     </div>
                 </div>
 
@@ -58,8 +98,21 @@
                     <div id="daily-output-render" class="rendered-preview markdown-body"></div>
 
                     <div class="action-buttons">
-                        <button id="btn-regenerate-daily" class="secondary-btn">🔄 重新生成</button>
-                        <button id="btn-save-daily" class="success-btn">✅ 采用并保存</button>
+                        <button id="btn-regenerate-daily" class="secondary-btn">
+                            <svg class="icon-inline" viewBox="0 0 24 24">
+                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                                <path d="M16 21h5v-5"></path>
+                            </svg>
+                            重新生成
+                        </button>
+                        <button id="btn-save-daily" class="success-btn">
+                            <svg class="icon-inline" viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            采用并保存
+                        </button>
                     </div>
                 </div>
 
@@ -70,23 +123,48 @@
                         <div class="sub-section-history">
                             <div class="history-toolbar">
                                 <div class="toolbar-title">
-                                    <h4>📅 日报归档</h4>
+                                    <h4>
+                                        <svg class="icon-inline" viewBox="0 0 24 24">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        日报归档
+                                    </h4>
                                 </div>
                                 <div class="toolbar-controls">
                                     <!-- Page Size Selector -->
-                                    <select id="daily-limit" class="limit-select small-input">
-                                        <option value="5" selected>5条/页</option>
-                                        <option value="10">10条/页</option>
-                                        <option value="20">20条/页</option>
-                                    </select>
+                                    <div class="custom-select-wrapper small" id="daily-limit-wrapper">
+                                        <div class="custom-select-trigger" style="min-width: 90px; padding: 6px 12px;">
+                                            <span class="selected-text">5条/页</span>
+                                        </div>
+                                        <div class="custom-options">
+                                            <div class="custom-option selected" data-value="5">5条/页</div>
+                                            <div class="custom-option" data-value="10">10条/页</div>
+                                            <div class="custom-option" data-value="20">20条/页</div>
+                                        </div>
+                                        <select id="daily-limit" style="display:none">
+                                            <option value="5" selected>5条/页</option>
+                                            <option value="10">10条/页</option>
+                                            <option value="20">20条/页</option>
+                                        </select>
+                                    </div>
                                     <span class="separator">|</span>
 
                                     <input type="date" id="daily-start-date" class="date-input small-input">
                                     <span class="separator">-</span>
                                     <input type="date" id="daily-end-date" class="date-input small-input">
-                                    <input type="text" id="daily-keyword" placeholder="搜索日报内容..."
-                                        class="search-input small-input">
-                                    <button id="btn-search-daily" class="btn-primary icon-btn">🔍</button>
+                                    <div class="search-wrapper">
+                                        <input type="text" id="daily-keyword" placeholder="搜索日报归档..."
+                                            class="search-input">
+                                        <button id="btn-search-daily" class="search-btn-ghost">
+                                            <svg class="icon-inline" viewBox="0 0 24 24">
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -104,13 +182,30 @@
                     <div class="controls">
                         <div class="style-select">
                             <span>风格：</span>
-                            <select id="weekly-style">
-                                <option value="formal">正式得体</option>
-                                <option value="tech">技术专业</option>
-                                <option value="simple">简洁明了</option>
-                            </select>
+                            <div class="custom-select-wrapper" id="weekly-style-wrapper">
+                                <div class="custom-select-trigger">
+                                    <span class="selected-text">正式得体</span>
+                                </div>
+                                <div class="custom-options">
+                                    <div class="custom-option selected" data-value="formal">正式得体</div>
+                                    <div class="custom-option" data-value="tech">技术专业</div>
+                                    <div class="custom-option" data-value="simple">简洁明了</div>
+                                </div>
+                                <select id="weekly-style" style="display:none">
+                                    <option value="formal" selected>正式得体</option>
+                                    <option value="tech">技术专业</option>
+                                    <option value="simple">简洁明了</option>
+                                </select>
+                            </div>
                         </div>
-                        <button id="btn-generate-weekly" class="primary-btn">📊 生成周报</button>
+                        <button id="btn-generate-weekly" class="primary-btn">
+                            <svg class="icon-inline" viewBox="0 0 24 24">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                            生成周报
+                        </button>
                     </div>
                 </div>
 
@@ -122,8 +217,21 @@
                     <div id="weekly-output-render" class="rendered-preview markdown-body"></div>
 
                     <div class="action-buttons">
-                        <button id="btn-regenerate-weekly" class="secondary-btn">🔄 重新生成</button>
-                        <button id="btn-save-weekly" class="success-btn">✅ 采用并保存</button>
+                        <button id="btn-regenerate-weekly" class="secondary-btn">
+                            <svg class="icon-inline" viewBox="0 0 24 24">
+                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                                <path d="M16 21h5v-5"></path>
+                            </svg>
+                            重新生成
+                        </button>
+                        <button id="btn-save-weekly" class="success-btn">
+                            <svg class="icon-inline" viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            采用并保存
+                        </button>
                     </div>
                 </div>
 
@@ -131,23 +239,46 @@
                 <div class="sub-section-history">
                     <div class="history-toolbar">
                         <div class="toolbar-title">
-                            <h4>📊 周报归档</h4>
+                            <h4>
+                                <svg class="icon-inline" viewBox="0 0 24 24">
+                                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                    <rect x="1" y="3" width="22" height="5"></rect>
+                                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                                </svg>
+                                周报归档
+                            </h4>
                         </div>
                         <div class="toolbar-controls">
                             <!-- Page Size Selector -->
-                            <select id="weekly-limit" class="limit-select small-input">
-                                <option value="5" selected>5条/页</option>
-                                <option value="10">10条/页</option>
-                                <option value="20">20条/页</option>
-                            </select>
+                            <div class="custom-select-wrapper small" id="weekly-limit-wrapper">
+                                <div class="custom-select-trigger" style="min-width: 90px; padding: 6px 12px;">
+                                    <span class="selected-text">5条/页</span>
+                                </div>
+                                <div class="custom-options">
+                                    <div class="custom-option selected" data-value="5">5条/页</div>
+                                    <div class="custom-option" data-value="10">10条/页</div>
+                                    <div class="custom-option" data-value="20">20条/页</div>
+                                </div>
+                                <select id="weekly-limit" style="display:none">
+                                    <option value="5" selected>5条/页</option>
+                                    <option value="10">10条/页</option>
+                                    <option value="20">20条/页</option>
+                                </select>
+                            </div>
                             <span class="separator">|</span>
 
                             <input type="date" id="weekly-start-date" class="date-input small-input">
                             <span class="separator">-</span>
                             <input type="date" id="weekly-end-date" class="date-input small-input">
-                            <input type="text" id="weekly-keyword" placeholder="搜索周报内容..."
-                                class="search-input small-input">
-                            <button id="btn-search-weekly" class="btn-primary icon-btn">🔍</button>
+                            <div class="search-wrapper">
+                                <input type="text" id="weekly-keyword" placeholder="搜索周报归档..." class="search-input">
+                                <button id="btn-search-weekly" class="search-btn-ghost">
+                                    <svg class="icon-inline" viewBox="0 0 24 24">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -239,7 +370,7 @@
 
     <!-- Marked for Markdown Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="app.js"></script>
+    <script src="js/app.js"></script>
 </body>
 
 </html>
