@@ -209,6 +209,16 @@ function setupSettings() {
             }
         });
     }
+    // Toggle API Key Visibility
+    const btnToggleKey = document.getElementById('btn-toggle-key');
+    if (btnToggleKey) {
+        btnToggleKey.addEventListener('click', () => {
+            const type = apiKeyInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            apiKeyInput.setAttribute('type', type);
+            // Toggle Icon (Simple Emoji switch for now, can be SVG)
+            btnToggleKey.textContent = type === 'password' ? '👁️' : '🔒';
+        });
+    }
 }
 
 // Config
@@ -289,12 +299,35 @@ async function saveConfig() {
 
 // Daily Generator
 // Daily Generator
+// Daily Generator
 async function generateDaily(e) {
+    const apiBase = apiBaseUrlInput.value.trim();
+    const modelName = modelNameInput.value.trim();
+    if (!apiBase || !modelName) {
+        // await showAlert('请先配置 API 信息 (点击右上角设置图标)');
+        // Improved UX: Direct user to settings
+        if (confirm('⚠️ 未检测到 API 配置。\n\n需要配置 AI 模型信息才能生成内容。\n是否立即前往配置？')) {
+            settingsModal.classList.add('show');
+        }
+        return;
+    }
     const targetBtn = (e && e.currentTarget) ? e.currentTarget : btnGenerateDaily;
     const content = dailyInput.value.trim();
     const style = dailyStyle.value;
 
     if (!content) { await showAlert('请输入今日工作内容'); return; }
+
+    // Minimum length check
+    if (content.length < 10) {
+        await showAlert('输入内容过少 (至少10个字符)，无法生成有效的日报。\n建议包含具体任务名称或进度。');
+        return;
+    }
+
+    // Pure number check (e.g. "123")
+    if (/^\d+$/.test(content)) {
+        await showAlert('请输入具体的文字描述，而不仅仅是数字。');
+        return;
+    }
 
     // Check if report already exists
     const date = new Date();
@@ -586,6 +619,14 @@ function switchToWeeklyTab() {
 
 // Weekly Generator
 async function generateWeekly(e) {
+    const apiBase = apiBaseUrlInput.value.trim();
+    const modelName = modelNameInput.value.trim();
+    if (!apiBase || !modelName) {
+        if (confirm('⚠️ 未检测到 API 配置。\n\n需要配置 AI 模型信息才能生成内容。\n是否立即前往配置？')) {
+            settingsModal.classList.add('show');
+        }
+        return;
+    }
     const targetBtn = (e && e.currentTarget) ? e.currentTarget : btnGenerateWeekly;
     const style = weeklyStyle.value;
 
@@ -770,10 +811,13 @@ async function fetchSpecificHistory(type, page = 1) {
         const res = await fetch(`${API_BASE}/history?${query}`);
         const data = await res.json();
 
-        historyState[type].totalPages = data.totalPages;
+        // Safe defaults for empty data
+        const currentPage = data.page || 1;
+        const totalPages = data.totalPages || 1;
+        historyState[type].totalPages = totalPages;
 
         renderHistoryGrid(data.items, `${type}-history-container`);
-        renderSpecificPagination(type, data.page, data.totalPages);
+        renderSpecificPagination(type, currentPage, totalPages);
     } catch (e) { console.error(e); }
 }
 
@@ -788,9 +832,28 @@ function renderHistoryGrid(items, containerId) {
     container.innerHTML = '';
 
     if (!items || items.length === 0) {
-        container.innerHTML = '<div class="history-empty">在此范围内暂无记录</div>';
+        // Switch to centered layout for empty state
+        container.classList.add('is-empty');
+        // Modern Empty State HTML
+        container.innerHTML = `
+            <div class="modern-empty-state">
+                <div class="empty-icon">
+                    <svg viewBox="0 0 200 200" style="width: 120px; height: 120px;">
+                        <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(139,92,246,0.2)" stroke-width="2" stroke-dasharray="5,5"/>
+                        <path d="M70 90 L130 90 M70 110 L110 110 M70 130 L120 130" stroke="rgba(139,92,246,0.3)" stroke-width="3" stroke-linecap="round"/>
+                        <circle cx="100" cy="100" r="65" fill="rgba(139,92,246,0.05)"/>
+                    </svg>
+                </div>
+                <div class="empty-title">暂无数据</div>
+                <div class="empty-desc">当前时间范围内未找到任何记录</div>
+                <div class="empty-hint">💡 提示：尝试调整日期范围或清空关键词搜索</div>
+            </div>
+        `;
         return;
     }
+
+    // Remove empty class if data exists
+    container.classList.remove('is-empty');
 
     // Determine layout mode based on container ID 
     const isWeekly = containerId.includes('weekly');

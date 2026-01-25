@@ -7,9 +7,13 @@ const config = getConfig();
 const PORT = config.server && config.server.port ? config.server.port : 3000;
 
 // Middleware
+const path = require('path');
+
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+// Fix for Electron packaging: Use absolute path
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/api/config', require('./server/routes/system'));

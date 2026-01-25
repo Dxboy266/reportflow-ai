@@ -1193,3 +1193,42 @@ button:disabled {
         flex: 1 1 100%;
     }
 }
+
+/* Password Toggle Eye Icon */
+.input-group-icon {
+    position: relative;
+    width: 100%;
+}
+
+.input-group-icon input {
+    padding-right: 40px;
+    /* Make room for the button */
+}
+
+/* Hide default Edge/IE password reveal button to avoid double icons */
+.input-group-icon input::-ms-reveal,
+.input-group-icon input::-ms-clear {
+    display: none;
+}
+
+
+.toggle-password {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-tertiary);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--text-primary);
+}

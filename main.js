@@ -9,7 +9,7 @@ function createWindow() {
         width: 1280,
         height: 850,
         title: 'ReportFlow AI',
-        icon: path.join(__dirname, 'public/favicon.ico'), // 假设有个图标
+        icon: path.join(__dirname, 'public/icon.png'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false

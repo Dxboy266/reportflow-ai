@@ -327,7 +327,12 @@
 
                 <div class="form-group">
                     <label for="api-key">API Key</label>
-                    <input type="password" id="api-key" placeholder="sk-...">
+                    <div class="input-group-icon">
+                        <input type="password" id="api-key" placeholder="sk-...">
+                        <button type="button" class="toggle-password" id="btn-toggle-key" title="显示/隐藏">
+                            👁️
+                        </button>
+                    </div>
                     <small>密钥仅保存在本地配置文件中，安全无忧</small>
                 </div>
 
@@ -340,7 +345,6 @@
                         <button id="btn-change-path" class="secondary-btn"
                             style="padding: 0 16px; white-space: nowrap;">更改目录</button>
                     </div>
-                    <small id="path-hint" style="color: rgba(255,255,255,0.4);">在桌面版中，您可以将数据迁移到自定义目录 (如 D 盘)。</small>
                 </div>
             </div>
             <div class="modal-footer">

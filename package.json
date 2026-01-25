@@ -35,7 +35,8 @@
       "output": "dist"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "public/icon.png"
     },
     "mac": {
       "target": "dmg",
@@ -45,10 +46,30 @@
     "dmg": {
       "title": "ReportFlow AI 安装包"
     },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ReportFlow AI",
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+    },
     "files": [
-      "**/*",
-      "!dist/*",
-      "!data/*"
+      "main.js",
+      "server.js",
+      "package.json",
+      "public/**/*",
+      "server/**/*",
+      "node_modules/**/*",
+      "!**/node_modules/*/{test,tests,doc,docs,example,examples,demo,demos}/**/*",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!dist",
+      "!data",
+      "!build_cache",
+      "!.git",
+      "!**/*.md",
+      "!**/*.map"
     ],
     "extraResources": [
       {

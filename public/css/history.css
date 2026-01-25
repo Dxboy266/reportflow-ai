@@ -80,6 +80,27 @@
     gap: 16px;
 }
 
+/* Force Center Empty State */
+/* Force Center Empty State */
+.history-grid-container.is-empty,
+#daily-history-container.is-empty,
+#weekly-history-container.is-empty {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-direction: column !important;
+    min-height: 400px !important;
+    width: 100% !important;
+}
+
+.modern-empty-state {
+    width: 100%;
+    /* max-width: 360px; REMOVED to allow full width as requested */
+    max-width: 100%;
+    /* Fully fill the container as requested */
+    margin: 0 auto;
+}
+
 .history-card {
     background: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -722,4 +743,81 @@
     background: #8b5cf6;
     border-color: #8b5cf6;
     color: #fff;
+}
+
+/* --- Modern Empty State --- */
+.modern-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    /* Very subtle background */
+    border-radius: 16px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    /* Dashed border for empty state vibe */
+    margin: 40px auto;
+    /* Centered with vertical spacing */
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.empty-icon {
+    margin-bottom: 24px;
+    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.1));
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+.empty-desc {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 20px;
+}
+
+.empty-hint {
+    font-size: 0.85rem;
+    color: #a78bfa;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- FINAL OVERRIDE: Ensure Center Alignment --- */
+#daily-history-container.is-empty,
+#weekly-history-container.is-empty {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-height: 400px !important;
+    grid-template-columns: none !important;
+}
+
+#daily-history-container.is-empty>.modern-empty-state,
+#weekly-history-container.is-empty>.modern-empty-state {
+    margin: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }

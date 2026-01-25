@@ -16,9 +16,28 @@ build/
 Thumbs.db
 
 # IDE
+# Dependencies
+node_modules/
+
+# Config with sensitive data
+config.json
+
+# User data (contains personal reports, should not be tracked)
+data/
+
+# Build output
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
 .vscode/
 .idea/
 
 # Logs
 *.log
 npm-debug.log*
+build_cache/
