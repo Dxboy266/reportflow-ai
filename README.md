@@ -25,7 +25,7 @@
 
 ### 方式一：下载安装包（推荐）
 
-前往 [Releases](https://github.com/Dxboy266/ai-report-generator/releases) 页面：
+前往 [Releases](https://github.com/Dxboy266/reportflow-ai/releases) 页面：
 - **Windows 用户**：下载 `.exe` 安装包
 - **macOS 用户**：下载 `.dmg` 安装包
 
@@ -41,7 +41,7 @@
 
 1. **克隆项目**
    ```bash
-   git clone https://github.com/Dxboy266/ai-report-generator.git
+   git clone https://github.com/Dxboy266/reportflow-ai
    cd ai-report-generator
    ```
 
