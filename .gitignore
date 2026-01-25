@@ -4,8 +4,12 @@ node_modules/
 # Config with sensitive data
 config.json
 
-# Data directory (optional - uncomment if you don't want to track reports)
-# data/
+# User data (contains personal reports, should not be tracked)
+data/
+
+# Build output
+dist/
+build/
 
 # OS files
 .DS_Store

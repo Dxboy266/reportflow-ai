@@ -1,4 +1,6 @@
 const path = require('path');
+const fs = require('fs');
+const { getConfig } = require('../config');
 
 function getWeekNumber(d) {
     d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -8,9 +10,30 @@ function getWeekNumber(d) {
     return weekNo;
 }
 
+function getDataRoot() {
+    // 1. Check User Config
+    try {
+        const config = getConfig();
+        if (config && config.dataDir) {
+            return config.dataDir;
+        }
+    } catch (e) { }
+
+    // 2. Detect Electron
+    const isElectron = process.versions && process.versions.electron;
+
+    if (isElectron) {
+        // Production: AppData
+        const appData = process.env.APPDATA || (process.platform === 'darwin' ? path.join(process.env.HOME, 'Library', 'Application Support') : path.join(process.env.HOME, '.config'));
+        return path.join(appData, 'ReportFlowAI', 'data');
+    }
+
+    // 3. Dev: Local
+    return path.join(process.cwd(), 'data');
+}
+
 function getWeekPath(dateStr) {
-    // Determine data root relative to CWD (project root)
-    const dataRoot = path.join(process.cwd(), 'data');
+    const dataRoot = getDataRoot();
 
     const date = new Date(dateStr);
     const year = date.getFullYear();
@@ -25,4 +48,4 @@ function getDateString(daysAgo = 0) {
     return d.toISOString().split('T')[0];
 }
 
-module.exports = { getWeekNumber, getWeekPath, getDateString };
+module.exports = { getWeekNumber, getWeekPath, getDateString, getDataRoot };

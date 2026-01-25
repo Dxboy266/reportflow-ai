@@ -182,6 +182,33 @@ function setupSettings() {
             modelNameInput.value = preset.model;
         }
     });
+
+    // Change Data Path
+    const btnChangePath = document.getElementById('btn-change-path');
+    if (btnChangePath) {
+        btnChangePath.addEventListener('click', async () => {
+            try {
+                // Show loading state?
+                btnChangePath.textContent = '选择中...';
+                const res = await fetch(`${API_BASE}/config/select-path`, { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('data-path-display').value = data.path;
+                    showToast('✅ 路径已更新，请重启应用生效');
+                } else if (data.cancelled) {
+                    // Do nothing
+                } else {
+                    showToast('❌ ' + (data.error || '操作失败'));
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('⚠️ 此功能仅支持桌面版');
+            } finally {
+                btnChangePath.textContent = '更改目录';
+            }
+        });
+    }
 }
 
 // Config
@@ -195,6 +222,12 @@ async function loadConfig() {
         if (aiConfig.provider) providerSelect.value = aiConfig.provider;
         if (aiConfig.baseUrl) apiBaseUrlInput.value = aiConfig.baseUrl;
         if (aiConfig.model) modelNameInput.value = aiConfig.model;
+
+        // Fill data path
+        if (data.currentDataPath) {
+            const pathDisplay = document.getElementById('data-path-display');
+            if (pathDisplay) pathDisplay.value = data.currentDataPath;
+        }
 
         if (!aiConfig.hasApiKey) {
             // First time or missing key

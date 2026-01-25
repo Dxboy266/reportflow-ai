@@ -1,7 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 
-const CONFIG_PATH = path.join(process.cwd(), 'config.json');
+const CONFIG_PATH = (() => {
+    const isElectron = process.versions && process.versions.electron;
+    if (isElectron) {
+        const appData = process.env.APPDATA || (process.platform === 'darwin' ? path.join(process.env.HOME, 'Library', 'Application Support') : path.join(process.env.HOME, '.config'));
+        const configDir = path.join(appData, 'ReportFlowAI');
+        // Ensure directory exists
+        if (!fs.existsSync(configDir)) {
+            try { fs.mkdirSync(configDir, { recursive: true }); } catch (e) {
+                console.error("Failed to create config dir:", e);
+            }
+        }
+        return path.join(configDir, 'config.json');
+    }
+    return path.join(process.cwd(), 'config.json');
+})();
 
 let config = {};
 

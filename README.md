@@ -1,65 +1,163 @@
-<div align="center">
-
 # 🚀 ReportFlow AI
-### 全能型 AI 智能工作汇报助手
-### Your Ultimate Intelligent Work Reporting Assistant
 
-[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
-[![Multi-Model AI](https://img.shields.io/badge/AI-Multi--Model-blueviolet.svg)](https://github.com/)
-[![Universal](https://img.shields.io/badge/For-Everyone-orange.svg)](https://github.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+一个基于 AI 的智能日报/周报生成器，支持 Windows 和 macOS 桌面版。
 
-</div>
+![screenshot](screenshots/main-interface.png)
+
+## ✨ 核心特性
+
+- **🤖 AI 驱动生成**：支持 DeepSeek、GPT、本地模型等多种 AI 引擎
+- **📝 日报智能总结**：输入流水账工作事项，一键生成专业规范的工作日报
+- **📊 周报自动汇总**：基于本周日报自动汇总生成周报，省时省力
+- **💎 精致 UI**：杂志级设计，深色主题，流畅动画，极致体验
+- **🗂️ 历史归档**：智能日期筛选，快速检索历史报告
+- **💾 数据私有**：所有数据存储在本地，可自定义存储位置（如 D 盘）
+- **🌍 跨平台支持**：原生 Windows 和 macOS 应用
+
+## 📦 安装与使用
+
+### 方式一：下载安装包（推荐）
+
+前往 [Releases](https://github.com/Dxboy266/ai-report-generator/releases) 页面：
+- **Windows 用户**：下载 `.exe` 安装包
+- **macOS 用户**：下载 `.dmg` 安装包
+
+双击安装，开箱即用。
+
+### 方式二：从源码构建
+
+#### 前置条件
+- Node.js 16+ 
+- npm 或 yarn
+
+#### 步骤
+
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/Dxboy266/ai-report-generator.git
+   cd ai-report-generator
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **配置 API**
+   
+   启动应用后，点击右上角设置图标，填入您的 AI 服务商 API Key：
+   - DeepSeek API：https://platform.deepseek.com
+   - 或其他 OpenAI 兼容接口
+
+4. **运行开发模式**
+   ```bash
+   # 网页模式（开发调试）
+   npm start
+   
+   # 桌面应用模式（Electron）
+   npm run app
+   ```
+
+5. **打包为安装包**
+   ```bash
+   npm run dist
+   ```
+   
+   打包后的文件在 `dist/` 目录：
+   - Windows：`.exe` 安装程序
+   - macOS：`.dmg` 安装镜像
+
+## 🎯 使用指南
+
+### 1. 生成日报
+
+在"写日报"标签页中：
+1. 输入今日工作内容（可以是流水账形式）
+2. 选择报告风格（正式得体 / 轻松自然 / 硬核技术）
+3. 点击"生成日报"
+4. AI 自动整理为规范日报，可直接复制粘贴
+
+### 2. 生成周报
+
+在"生成周报"标签页中：
+1. 系统自动读取本周已保存的日报
+2. 点击"生成周报"，AI 基于本周工作自动汇总
+3. 一键保存或复制
+
+### 3. 数据管理
+
+- **查看历史**：日报归档 / 周报归档标签页，支持日期筛选和关键词搜索
+- **更改存储位置**（桌面版）：
+  1. 打开设置
+  2. 在"数据存储位置"点击"更改目录"
+  3. 选择您想要的文件夹（如 `D:\我的工作日报`）
+  4. 重启生效
+
+## 🛠️ 技术架构
+
+- **前端**：原生 HTML/CSS/JavaScript，杂志级 UI 设计
+- **后端**：Express.js (Node.js)
+- **桌面框架**：Electron
+- **AI 集成**：支持 OpenAI 兼容 API (DeepSeek / GPT / 本地 Ollama)
+- **数据存储**：本地 JSON 文件（支持自定义路径）
+
+## 🔧 配置说明
+
+### 支持的 AI 提供商
+
+| 提供商 | Base URL | 推荐模型 |
+|--------|----------|---------|
+| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
+| SiliconFlow | `https://api.siliconflow.cn/v1` | `deepseek-ai/DeepSeek-V3` |
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o` |
+| 本地 Ollama | `http://localhost:11434/v1` | `llama3` |
+
+### 自定义配置文件
+
+桌面版配置文件位置：
+- **Windows**: `C:\Users\<用户名>\AppData\Roaming\ReportFlowAI\config.json`
+- **macOS**: `~/Library/Application Support/ReportFlowAI/config.json`
+
+## 📝 开发指南
+
+### 项目结构
+
+```
+ai-report-generator/
+├── main.js                 # Electron 主进程入口
+├── server.js               # Express 服务器入口
+├── public/                 # 前端资源
+│   ├── index.html
+│   ├── css/
+│   └── js/
+├── server/                 # 后端逻辑
+│   ├── routes/            # API 路由
+│   ├── services/          # AI 服务
+│   ├── prompts/           # Prompt 模板
+│   └── utils/             # 工具函数
+└── data/                   # 用户数据（不提交 Git）
+```
+
+### 贡献指南
+
+欢迎提交 Pull Request！
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 发起 Pull Request
+
+## 📄 开源协议
+
+本项目基于 [MIT License](LICENSE) 开源。
+
+## 🙏 致谢
+
+- AI 模型支持：DeepSeek
+- Markdown 渲染：marked.js
+- 桌面框架：Electron
 
 ---
 
-## 💡 简介 (Introduction)
-
-**ReportFlow AI** 是一款**面向所有人**的智能工作汇报神器。无论你是职场白领、自由职业者、学生还是团队管理者，它都是你职业生涯的最佳记录者。
-
-**ReportFlow 重新定义了汇报**。不止于日报周报，更是你职业生涯的全周期智能助手。未来，无论是月度总结、季度回顾，还是年终述职，ReportFlow 都能帮你运筹帷幄。告别“汇报焦虑症”，让 AI 将你碎片化的日常努力，瞬间转化为逻辑清晰、价值突出的完美报告。
-
-## 🔥 核心功能展示
-
-### 1. ✍️ 极速记录，可视化归档
-**日报模式**：极简的录入体验，配合自适应的智能网格历史布局，让每一天的工作都井井有条，不再遗漏任何重要细节。
-> ![日报主界面](./screenshots/dashboard_daily.png)
-
-### 2. 🪄 AI 魔法，一键成文
-**周报模式**：基于多模型 AI (DeepSeek, GPT, Claude 等)，自动将一周的流水账转化为高质量的汇报文档。支持多种文风切换（正式/简洁/专业），一键生成，效率翻倍。
-> ![周报生成界面](./screenshots/dashboard_weekly.png)
-
-## 🚀 快速开始 (Quick Start)
-
-只需要 Node.js 环境即可运行：
-
-1.  **下载代码**
-    ```bash
-    git clone https://github.com/yourusername/reportflow-ai.git
-    cd reportflow-ai
-    ```
-
-2.  **安装依赖**
-    ```bash
-    npm install
-    ```
-
-3.  **启动应用**
-    ```bash
-    npm start
-    ```
-    在浏览器打开 `http://localhost:3000` 即可使用。
-
-## ⚙️ 配置说明
-
-*   **端口修改**：默认运行在 3000 端口，可在 `server.js` 中修改。
-*   **AI 配置**：目前支持 DeepSeek 等模型，请在 `server.js` 中配置您的 API Key。
-*   **数据存储**：所有数据默认保存在本地 `data/` 目录下，无需配置数据库，迁移方便，隐私安全。
-
-## 🤝 贡献 (Contributing)
-
-欢迎提交 Issue 或 Pull Request！无论是新功能建议还是 Bug 修复，我们都非常期待您的参与。
-
-## 📄 开源协议 (License)
-
-MIT © 2026 ReportFlow AI Team
+**如果觉得有用，请给个 ⭐ Star，感谢支持！**

@@ -2,10 +2,12 @@
   "name": "ai-report-generator",
   "version": "1.0.0",
   "description": "AI 日报周报生成器 - 基于 DeepSeek API 的智能报告生成工具",
-  "main": "server.js",
+  "main": "main.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "app": "electron .",
+    "dist": "electron-builder",
+    "dev": "node server/index.js"
   },
   "keywords": [
     "ai",
@@ -14,12 +16,48 @@
     "weekly-report",
     "deepseek"
   ],
-  "author": "",
+  "author": "DxBoy",
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "marked": "^17.0.1",
+    "marked": "^11.1.1",
     "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.dxboy.reportflow",
+    "productName": "ReportFlow AI",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "title": "ReportFlow AI 安装包"
+    },
+    "files": [
+      "**/*",
+      "!dist/*",
+      "!data/*"
+    ],
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   }
 }

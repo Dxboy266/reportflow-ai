@@ -4,10 +4,14 @@ const path = require('path');
 const fs = require('fs');
 const { removeThinkingContent } = require('../utils/textUtils');
 const { readFileAsync } = require('../utils/fileUtils');
+const { getDataRoot } = require('../utils/dateUtils'); // Import
 
 // Helper to recursively find all report files
 async function findAllReports(dir) {
     let results = [];
+    // Ensure dir exists to avoid crash
+    if (!fs.existsSync(dir)) return [];
+
     const list = await fs.promises.readdir(dir, { withFileTypes: true });
     for (const dirent of list) {
         const res = path.join(dir, dirent.name);
@@ -24,7 +28,10 @@ async function findAllReports(dir) {
 router.get('/', async (req, res) => {
     try {
         const { page = 1, limit = 10, type = 'all', keyword = '', startDate, endDate } = req.query;
-        const dataDir = path.join(process.cwd(), 'data');
+
+        // Use SAFE data root logic (Electron compatible)
+        const dataDir = getDataRoot();
+
         if (!fs.existsSync(dataDir)) return res.json({ items: [], total: 0 });
 
         const allFiles = await findAllReports(dataDir);

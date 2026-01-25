@@ -330,6 +330,18 @@
                     <input type="password" id="api-key" placeholder="sk-...">
                     <small>密钥仅保存在本地配置文件中，安全无忧</small>
                 </div>
+
+                <div class="form-group" id="data-path-group"
+                    style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                    <label>数据存储位置</label>
+                    <div class="input-group" style="display: flex; gap: 8px;">
+                        <input type="text" id="data-path-display" readonly placeholder="读取中..."
+                            style="flex:1; background: rgba(0,0,0,0.2); color: rgba(255,255,255,0.7); cursor: default;">
+                        <button id="btn-change-path" class="secondary-btn"
+                            style="padding: 0 16px; white-space: nowrap;">更改目录</button>
+                    </div>
+                    <small id="path-hint" style="color: rgba(255,255,255,0.4);">在桌面版中，您可以将数据迁移到自定义目录 (如 D 盘)。</small>
+                </div>
             </div>
             <div class="modal-footer">
                 <button id="btn-save-settings" class="primary-btn">保存配置</button>
