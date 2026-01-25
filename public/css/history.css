@@ -228,22 +228,42 @@
 }
 
 .history-list-card {
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    /* Slightly smaller radius for list look */
-    padding: 16px 20px;
+    background: linear-gradient(145deg, rgba(30, 30, 40, 0.6) 0%, rgba(20, 20, 30, 0.4) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px 24px;
     display: grid;
     /* Date | Content | Action */
     grid-template-columns: 140px 1fr 100px;
-    align-items: center;
+    align-items: flex-start !important;
     gap: 24px;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.history-list-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(to bottom, var(--primary-color), #8b5cf6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .history-list-card:hover {
     border-color: var(--primary-color);
-    background: rgba(255, 255, 255, 0.02);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+    background: linear-gradient(145deg, rgba(40, 40, 55, 0.8) 0%, rgba(30, 30, 40, 0.6) 100%);
+    transform: translateY(-2px);
+}
+
+.history-list-card:hover::before {
+    opacity: 1;
 }
 
 .list-date-group {
@@ -254,25 +274,61 @@
 
 .list-week-badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
     font-size: 0.75rem;
-    background: rgba(16, 185, 129, 0.15);
-    /* Greenish */
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+    border: 1px solid rgba(16, 185, 129, 0.3);
     color: #34d399;
     width: fit-content;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.list-summary {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.6;
+/* Align items back to center for minimalist bar look */
+.history-list-card {
+    align-items: center !important;
+}
 
-    /* Clamp to 3 lines */
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* Data Capsule Styles */
+.list-summary-capsules {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.capsule-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(20, 20, 30, 0.6);
+    /* Darker backdrop */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 14px;
+    border-radius: 24px;
+    /* Fully rounded pills */
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.capsule-item:hover {
+    background: rgba(99, 102, 241, 0.15);
+    /* Primary tint on hover */
+    border-color: var(--primary-color);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.capsule-icon {
+    font-size: 1.1rem;
+}
+
+.capsule-text {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
 }
 
 .list-action {
@@ -280,19 +336,23 @@
 }
 
 .btn-view-details {
-    padding: 6px 12px;
+    padding: 8px 16px;
     border: 1px solid var(--border-color);
-    background: transparent;
+    background: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 0.85rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
 }
 
 .btn-view-details:hover {
     border-color: var(--primary-color);
-    color: var(--primary-color);
+    color: white;
+    background: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 
@@ -509,4 +569,157 @@
 /* Align items to top in List Mode since height varies */
 .history-list-card {
     align-items: flex-start !important;
+}
+
+/* --- Unified History Card Design (Premium Clean) --- */
+.history-card {
+    background: linear-gradient(145deg, rgba(30, 30, 40, 0.4), rgba(20, 20, 30, 0.4));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* Subtle border */
+    border-radius: 16px;
+    /* Softer corners */
+    padding: 22px;
+    /* More breathing room */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 180px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.history-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(145deg, rgba(35, 35, 45, 0.5), rgba(25, 25, 35, 0.5));
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Type Modifiers */
+.card-daily {
+    /* Blue Accent Hint */
+}
+
+.card-weekly {
+    /* Purple Top Accent */
+    border-top: 3px solid #8b5cf6;
+}
+
+/* Header */
+.unified-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.unified-date {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+/* Badges */
+.unified-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.daily-badge {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.weekly-badge {
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* Body Content */
+.unified-card-body {
+    flex: 1;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Align content to top */
+}
+
+/* Daily Title */
+.card-brief-title {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    /* Clean text block */
+}
+
+/* Weekly Highlights */
+.card-highlights ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+/* Footer & Meta */
+.unified-card-footer {
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.unified-meta {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Action Button (Circle Arrow) */
+.unified-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-card:hover .unified-action-btn {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+    transform: translateX(4px);
+}
+
+/* Specific Accent hovers */
+.card-daily:hover .unified-action-btn {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+}
+
+.card-weekly:hover .unified-action-btn {
+    background: #8b5cf6;
+    border-color: #8b5cf6;
+    color: #fff;
 }

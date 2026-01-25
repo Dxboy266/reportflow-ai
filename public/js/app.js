@@ -67,14 +67,76 @@ let generatedDailyCache = null;
 let generatedWeeklyCache = null;
 
 // Init
+// Init
+// Init
 document.addEventListener('DOMContentLoaded', () => {
     loadConfig();
+
+    // Force set defaults on init
+    setSmartDates('daily');
+    setSmartDates('weekly');
+
+    // Load Data
     loadHistory();
+    fetchWeeklyHistory();
+
     setupTabs();
     setupSettings();
 });
 
-// Tabs
+// Helper: Smart Date Setter
+function setSmartDates(type) {
+    const startInput = document.getElementById(`${type}-start-date`);
+    const endInput = document.getElementById(`${type}-end-date`);
+    if (!startInput || !endInput) return;
+
+    let startStr, endStr;
+
+    const now = new Date();
+
+    if (type === 'daily') {
+        // Daily: Always Mon-Fri of CURRENT week
+        // Note: In JS getDay(), Sunday is 0. We treat Monday as 1.
+        let day = now.getDay();
+        // If Sunday(0), treat as 7 to calculate back to Monday easily if we consider Sun as end of week
+        // Standard ISO week: Mon=1, Sun=7.
+        // Diff to Monday: 1 - day.
+        // If today is Sun(0), ISO day is 7. Diff = 1 - 7 = -6.
+        // If today is Mon(1), ISO day is 1. Diff = 1 - 1 = 0.
+
+        const isoDay = day === 0 ? 7 : day;
+        const diffToMon = 1 - isoDay;
+
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + diffToMon);
+
+        const friday = new Date(monday);
+        friday.setDate(monday.getDate() + 4);
+
+        startStr = formatDateFull(monday);
+        endStr = formatDateFull(friday);
+    } else {
+        // Weekly: First Day of Month to Last Day of Month
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Day 0 of next month
+
+        startStr = formatDateFull(firstDay);
+        endStr = formatDateFull(lastDay);
+    }
+
+    startInput.value = startStr;
+    endInput.value = endStr;
+}
+
+// Helper: Date Formatter
+function formatDateFull(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+// Tabs Logic
 function setupTabs() {
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -82,7 +144,16 @@ function setupTabs() {
             tabContents.forEach(c => c.classList.remove('active'));
 
             tab.classList.add('active');
-            document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
+            const type = tab.dataset.tab; // 'daily' or 'weekly'
+            document.getElementById(`${type}-section`).classList.add('active');
+
+            // STRICT: Reset dates to default range when switching (User preference)
+            // Or just verify they are set. Let's force reset to ensure "Default is..." behavior
+            setSmartDates(type);
+
+            // Refresh data
+            if (type === 'daily') fetchDailyHistory();
+            if (type === 'weekly') fetchWeeklyHistory();
         });
     });
 }
@@ -143,7 +214,7 @@ async function saveConfig() {
     const model = modelNameInput.value.trim();
     const apiKey = apiKeyInput.value.trim();
 
-    if (!baseUrl || !model) return alert('请填写完整的 API 信息 (Base URL 和 Model)');
+    if (!baseUrl || !model) { await showAlert('请填写完整的 API 信息 (Base URL 和 Model)'); return; }
 
     // For cloud providers, API key is usually required. For local, it's not.
     if (!apiKey && provider !== 'local' && provider !== 'custom') {
@@ -170,14 +241,14 @@ async function saveConfig() {
         const data = await res.json();
         if (data.success) {
             settingsModal.classList.remove('show');
-            alert('配置已保存');
+            await showAlert('配置已保存');
             apiKeyInput.value = ''; // Clear for security
             loadConfig(); // Reload to refresh state
         } else {
-            alert('保存失败: ' + data.error);
+            await showAlert('保存失败: ' + data.error);
         }
     } catch (e) {
-        alert('保存失败');
+        await showAlert('保存失败');
     } finally {
         setLoading(btnSaveSettings, false);
     }
@@ -190,7 +261,7 @@ async function generateDaily(e) {
     const content = dailyInput.value.trim();
     const style = dailyStyle.value;
 
-    if (!content) return alert('请输入今日工作内容');
+    if (!content) { await showAlert('请输入今日工作内容'); return; }
 
     // Check if report already exists
     const date = new Date();
@@ -224,6 +295,9 @@ async function generateDaily(e) {
     // ★ 立即显示预览区域和加载状态 - 不要让用户干等！
     const renderEl = document.getElementById('daily-output-render');
     dailyPreviewContainer.style.display = 'block';
+    // Hide buttons while generating
+    dailyPreviewContainer.querySelector('.action-buttons').style.display = 'none';
+
     renderEl.innerHTML = `
         <div class="thinking-box loading expanded">
             <div class="thinking-header">
@@ -279,8 +353,11 @@ async function generateDaily(e) {
             style: style
         };
 
+        // Show buttons after completion
+        dailyPreviewContainer.querySelector('.action-buttons').style.display = 'flex';
+
     } catch (e) {
-        alert('网络或生成错误: ' + e.message);
+        await showAlert('网络或生成错误: ' + e.message);
         btnGenerateDaily.disabled = false;
         btnRegenerateDaily.disabled = false;
     } finally {
@@ -454,10 +531,10 @@ async function saveDaily() {
                 }
             }
         } else {
-            alert('保存失败: ' + data.error);
+            await showAlert('保存失败: ' + data.error);
         }
     } catch (e) {
-        alert('保存失败');
+        await showAlert('保存失败');
     }
 }
 
@@ -504,6 +581,9 @@ async function generateWeekly(e) {
     // ★ 立即显示预览区域和加载状态
     const renderEl = document.getElementById('weekly-output-render');
     weeklyPreviewContainer.style.display = 'block';
+    // Hide buttons while generating
+    weeklyPreviewContainer.querySelector('.action-buttons').style.display = 'none';
+
     renderEl.innerHTML = `
         <div class="thinking-box loading expanded">
             <div class="thinking-header">
@@ -548,8 +628,25 @@ async function generateWeekly(e) {
             style: style
         };
 
+        // Show buttons after completion
+        weeklyPreviewContainer.querySelector('.action-buttons').style.display = 'flex';
+
     } catch (e) {
-        alert('网络或生成错误: ' + e.message);
+        // Parse error message if it's JSON
+        let errorMsg = e.message;
+        try {
+            const jsonErr = JSON.parse(errorMsg);
+            if (jsonErr.error) errorMsg = jsonErr.error;
+        } catch (_) { }
+
+        if (errorMsg.includes('No dailies found')) {
+            await showAlert('⚠️ 本周暂无日报记录，无法生成周报。\n请先补充每日工作内容。');
+        } else {
+            await showAlert('网络或生成错误: ' + errorMsg);
+        }
+        // Hide preview if failed
+        weeklyPreviewContainer.style.display = 'none';
+
     } finally {
         setLoading(targetBtn, false);
     }
@@ -672,92 +769,84 @@ function renderHistoryGrid(items, containerId) {
         container.classList.remove('single-item-mode');
     }
 
-    if (isWeekly) {
-        container.className = 'history-list-mode'; // Switch to List Mode
-        renderWeeklyListMode(items, container);
-    } else {
-        container.className = 'history-grid-container'; // Keep Grid Mode
-        // Re-apply single mode if it was overwritten
-        if (items.length === 1) container.classList.add('single-item-mode');
-        renderDailyGridMode(items, container);
-    }
+    // Unified Grid Renderer Call
+    const type = isWeekly ? 'weekly' : 'daily';
+    renderUnifiedGrid(items, container, type);
 }
 
-// --- Daily Renderer (Card Grid) ---
-function renderDailyGridMode(items, container) {
+// --- Unified Card Renderer (The Ultimate Refactor) ---
+function renderUnifiedGrid(items, container, type) {
     items.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'history-card';
+        // Base class + Type Modifier
+        card.className = `history-card card-${type}`;
 
         let contentRaw = item.fullContent || item.preview || '';
         contentRaw = removeThinkingContent(contentRaw);
-        const smartTitle = extractSmartTitle(contentRaw);
 
-        // Safe encode for onclick
-        const safeDate = item.date;
-        const safeContent = encodeURIComponent(item.fullContent || '');
+        // --- Content Strategy Based on Type ---
+        let bodyHtml = '';
+        let badgeHtml = '';
+        let metaHtml = '';
 
-        card.onclick = () => viewHistoryItem(safeDate, safeContent, 'daily');
-
-        card.innerHTML = `
-            <div class="history-card-header">
-                <span class="history-date">${item.date}</span>
-                <span class="badge badge-daily">${item.weekday}</span>
-            </div>
-            <div class="history-preview-minimal">
-                ${smartTitle}
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-// --- Weekly Renderer (Wide List) ---
-// --- Weekly Renderer (Wide Dashboard Mode) ---
-function renderWeeklyListMode(items, container) {
-    items.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'history-list-card'; // Wide card
-
-        // 1. Clean Thinking Content First
-        let contentRaw = item.fullContent || item.preview || '';
-        contentRaw = removeThinkingContent(contentRaw);
-
-        // 2. Extract The "Core Summary" Section (Rich HTML)
-        const summaryHtml = extractWeeklyCoreContent_V2(contentRaw);
+        if (type === 'daily') {
+            const title = extractSmartTitle(contentRaw);
+            bodyHtml = `<div class="card-brief-title" style="font-size:0.95rem; line-height:1.5; color:#e2e8f0;">${title}</div>`;
+            badgeHtml = `<span class="badge badge-daily">${item.weekday}</span>`;
+            metaHtml = '<span style="opacity:0.6; font-size:0.8rem;">日常记录</span>';
+        }
+        else if (type === 'weekly') {
+            const highlights = extractWeeklyHighlights(contentRaw); // Ensure this is defined locally or below
+            bodyHtml = `<div class="card-highlights">${highlights}</div>`;
+            badgeHtml = `<span class="list-week-badge" style="background:rgba(139,92,246,0.15); border-color:rgba(139,92,246,0.3); color:#a78bfa;">第${item.weekNumber}周</span>`;
+            metaHtml = `<span style="opacity:0.6; font-size:0.8rem;">📝 ${contentRaw.length}字</span>`;
+        }
 
         // Safe encode
         const safeDate = item.date;
         const safeContent = encodeURIComponent(item.fullContent || '');
+        const openAction = () => viewHistoryItem(safeDate, safeContent, type);
 
-        // Pass 'weekly' type explicitly to fix Modal Title
-        const openAction = () => viewHistoryItem(safeDate, safeContent, 'weekly');
+        card.onclick = openAction;
 
-        row.innerHTML = `
-            <div class="list-date-group">
-                <span class="history-date">${item.date}</span>
-                <span class="list-week-badge">第${item.weekNumber}周</span>
+        // Unified Structure
+        card.innerHTML = `
+            <div class="history-card-header" style="justify-content:space-between; display:flex; margin-bottom:12px;">
+                 <span class="history-date">${item.date}</span>
+                 ${badgeHtml}
             </div>
-            <!-- Expanded Summary Area -->
-            <div class="list-summary-expanded">
-                ${summaryHtml}
+            
+            <div class="card-body" style="flex:1; margin-bottom:12px;">
+                ${bodyHtml}
             </div>
-            <div class="list-action">
-                <button class="btn-view-details" title="查看完整周报">
-                    <svg class="icon-inline" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    详情
-                </button>
+            
+            <div class="weekly-card-footer" style="margin-top:auto; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;">
+                ${metaHtml}
+                <span style="color:${type === 'daily' ? '#3b82f6' : '#8b5cf6'}; font-size:0.85rem;">查看 ➜</span>
             </div>
         `;
 
-        row.querySelector('.btn-view-details').onclick = (e) => {
-            e.stopPropagation();
-            openAction();
-        };
-        row.onclick = openAction;
-
-        container.appendChild(row);
+        container.appendChild(card);
     });
+}
+
+// Add the missing helper function directly here to be safe
+function extractWeeklyHighlights(markdown) {
+    if (!markdown) return '暂无摘要';
+    const lines = markdown.split('\n');
+    const highlights = [];
+    for (const line of lines) {
+        const clean = line.trim();
+        if (clean.length < 5 || clean.startsWith('#') || clean.startsWith('---')) continue;
+        if (/^[-*]\s/.test(clean) || /^\d+\.\s/.test(clean)) {
+            let text = clean.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '').replace(/\*\*/g, '');
+            if (text.length > 40) text = text.substring(0, 38) + '...';
+            highlights.push(text);
+        }
+        if (highlights.length >= 3) break;
+    }
+    if (highlights.length === 0) return '点击查看详情';
+    return `<ul style="padding-left:0; list-style:none; margin:0;">${highlights.map(h => `<li style="margin-bottom:6px; font-size:0.85rem; color:rgba(255,255,255,0.7); display:flex; align-items:flex-start; gap:6px;"><span style="color:#8b5cf6; font-size:1.2em; line-height:1;">•</span> ${h}</li>`).join('')}</ul>`;
 }
 
 // Helper: Extract Smart Title (For Daily) - Keep existing logic
@@ -1077,6 +1166,29 @@ function showConfirm(message) {
     });
 }
 
+function showAlert(message) {
+    return new Promise((resolve) => {
+        confirmMessage.textContent = message;
+        // Hide cancel button for alert
+        btnCancelConfirm.style.display = 'none';
+        confirmModal.classList.add('show');
+
+        const cleanup = () => {
+            confirmModal.classList.remove('show');
+            btnOkConfirm.removeEventListener('click', handleOk);
+            // Restore cancel button for next time
+            setTimeout(() => { btnCancelConfirm.style.display = ''; }, 300);
+        };
+
+        const handleOk = () => {
+            cleanup();
+            resolve();
+        };
+
+        btnOkConfirm.addEventListener('click', handleOk);
+    });
+}
+
 // Utils
 function setLoading(btn, isLoading, customText = '生成中...') {
     if (isLoading) {
@@ -1321,5 +1433,92 @@ class CustomDatePicker {
 
 // Initialize
 const datePicker = new CustomDatePicker();
+
+// Daily Report Event Listeners
+btnGenerateDaily.addEventListener('click', generateDaily);
+btnRegenerateDaily.addEventListener('click', generateDaily);
+btnSaveDaily.addEventListener('click', saveDaily);
+
+// Weekly Report Event Listeners
+btnGenerateWeekly.addEventListener('click', generateWeekly);
 btnRegenerateWeekly.addEventListener('click', generateWeekly);
 btnSaveWeekly.addEventListener('click', saveWeekly);
+
+// --- Weekly Renderer (Grid Card Mode - Unified Premium Look) ---
+function renderWeeklyGridMode(items, container) {
+    items.forEach(item => {
+        const card = document.createElement('div');
+        // Add 'weekly-card' class for special styling (gold/purple glow)
+        card.className = 'history-card weekly-card';
+
+        let contentRaw = item.fullContent || item.preview || '';
+        contentRaw = removeThinkingContent(contentRaw);
+
+        // Extract 3 Key Points
+        const highlightsHtml = extractWeeklyHighlights(contentRaw);
+
+        // Safe encode
+        const safeDate = item.date;
+        const safeContent = encodeURIComponent(item.fullContent || '');
+
+        const openAction = () => viewHistoryItem(safeDate, safeContent, 'weekly');
+
+        // Bind events
+        card.onclick = openAction;
+
+        card.innerHTML = `
+            <div class="history-card-header">
+                 <div class="list-date-group">
+                    <span class="history-date">${item.date}</span>
+                 </div>
+                 <span class="list-week-badge">第${item.weekNumber}周</span>
+            </div>
+            
+            <div class="weekly-highlight-preview">
+                ${highlightsHtml}
+            </div>
+            
+            <div class="weekly-card-footer">
+                <span class="mini-meta">📝 ${contentRaw.length}字</span>
+                <button class="btn-text-only">详情 ➜</button>
+            </div>
+        `;
+
+        // Bind click for the button too, although card click covers it
+        const detailBtn = card.querySelector('.btn-text-only');
+        if (detailBtn) {
+            detailBtn.onclick = (e) => {
+                e.stopPropagation();
+                openAction();
+            };
+        }
+
+        container.appendChild(card);
+    });
+}
+
+function extractWeeklyHighlights(markdown) {
+    if (!markdown) return '<div class="empty-highlight">暂无摘要</div>';
+
+    const lines = markdown.split('\n');
+    const highlights = [];
+
+    // Intelligent extraction: prefer lines with bold text or list items
+    for (const line of lines) {
+        const clean = line.trim();
+        // Skip headers and separators
+        if (clean.startsWith('#') || clean.startsWith('---') || clean.length < 5) continue;
+
+        // Match list items
+        if (/^[-*]\s/.test(clean) || /^\d+\.\s/.test(clean)) {
+            let text = clean.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '').replace(/\*\*/g, '');
+            if (text.length > 40) text = text.substring(0, 38) + '...';
+            highlights.push(text);
+        }
+        if (highlights.length >= 3) break;
+    }
+
+    if (highlights.length === 0) return '<div class="empty-highlight">点击查看周报详情</div>';
+
+    return `<ul>${highlights.map(h => `<li>${h}</li>`).join('')}</ul>`;
+}
