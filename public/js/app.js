@@ -66,6 +66,24 @@ const PROVIDERS = {
 let generatedDailyCache = null;
 let generatedWeeklyCache = null;
 
+// Edit Mode State
+let dailyEditMode = false;
+let weeklyEditMode = false;
+
+// Role Selectors
+const dailyRole = document.getElementById('daily-role');
+const weeklyRole = document.getElementById('weekly-role');
+
+// Edit Mode Elements
+const btnEditDaily = document.getElementById('btn-edit-daily');
+const btnEditWeekly = document.getElementById('btn-edit-weekly');
+const dailyEditTextarea = document.getElementById('daily-edit-textarea');
+const weeklyEditTextarea = document.getElementById('weekly-edit-textarea');
+const dailyOutputRender = document.getElementById('daily-output-render');
+const weeklyOutputRender = document.getElementById('weekly-output-render');
+const dailyCharCounter = document.getElementById('daily-char-counter');
+const weeklyCharCounter = document.getElementById('weekly-char-counter');
+
 // Init
 // Init
 // Init
@@ -314,6 +332,11 @@ async function generateDaily(e) {
     const targetBtn = (e && e.currentTarget) ? e.currentTarget : btnGenerateDaily;
     const content = dailyInput.value.trim();
     const style = dailyStyle.value;
+    const role = dailyRole ? dailyRole.value : '通用';
+
+    // Reset edit mode
+    dailyEditMode = false;
+    if (btnEditDaily) updateEditButtonState('daily', false);
 
     if (!content) { await showAlert('请输入今日工作内容'); return; }
 
@@ -382,7 +405,7 @@ async function generateDaily(e) {
         const res = await fetch(`${API_BASE}/generate-daily`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content, style })
+            body: JSON.stringify({ content, style, role })
         });
 
         let fullText = '';
@@ -416,7 +439,8 @@ async function generateDaily(e) {
         generatedDailyCache = {
             rawContent: content,
             generatedReport: fullText,
-            style: style
+            style: style,
+            role: role
         };
 
         // Show buttons after completion
@@ -629,6 +653,11 @@ async function generateWeekly(e) {
     }
     const targetBtn = (e && e.currentTarget) ? e.currentTarget : btnGenerateWeekly;
     const style = weeklyStyle.value;
+    const role = weeklyRole ? weeklyRole.value : '通用';
+
+    // Reset edit mode
+    weeklyEditMode = false;
+    if (btnEditWeekly) updateEditButtonState('weekly', false);
 
     // Check if weekly report already exists
     const date = new Date();
@@ -672,7 +701,7 @@ async function generateWeekly(e) {
         const res = await fetch(`${API_BASE}/generate-weekly`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ style })
+            body: JSON.stringify({ style, role })
         });
 
         let fullText = '';
@@ -699,7 +728,8 @@ async function generateWeekly(e) {
 
         generatedWeeklyCache = {
             generatedReport: fullText,
-            style: style
+            style: style,
+            role: role
         };
 
         // Show buttons after completion
@@ -1618,3 +1648,186 @@ function extractWeeklyHighlights(markdown) {
 
     return `<ul>${highlights.map(h => `<li>${h}</li>`).join('')}</ul>`;
 }
+
+// ===============================================
+// Edit Mode Functions (Reusable Component)
+// ===============================================
+
+/**
+ * Toggle edit mode for a report type
+ * @param {string} type - 'daily' or 'weekly'
+ */
+function toggleEditMode(type) {
+    const isDaily = type === 'daily';
+    const editMode = isDaily ? dailyEditMode : weeklyEditMode;
+    const newMode = !editMode;
+
+    // Update state
+    if (isDaily) {
+        dailyEditMode = newMode;
+    } else {
+        weeklyEditMode = newMode;
+    }
+
+    // Update UI
+    updateEditButtonState(type, newMode);
+
+    const outputRender = isDaily ? dailyOutputRender : weeklyOutputRender;
+    const editTextarea = isDaily ? dailyEditTextarea : weeklyEditTextarea;
+    const charCounter = isDaily ? dailyCharCounter : weeklyCharCounter;
+    const cache = isDaily ? generatedDailyCache : generatedWeeklyCache;
+
+    if (newMode) {
+        // Enter edit mode
+        const cleanContent = removeThinkingContent(cache?.generatedReport || '');
+        editTextarea.value = cleanContent;
+        outputRender.style.display = 'none';
+        editTextarea.style.display = 'block';
+        charCounter.style.display = 'block';
+        updateCharCounter(type, cleanContent.length);
+        editTextarea.focus();
+    } else {
+        // Exit edit mode (preview the edited content)
+        const editedContent = editTextarea.value;
+
+        // Update cache with edited content
+        if (cache) {
+            cache.generatedReport = editedContent;
+        }
+
+        // Render the markdown
+        outputRender.innerHTML = marked.parse(editedContent);
+        outputRender.style.display = 'block';
+        editTextarea.style.display = 'none';
+        charCounter.style.display = 'none';
+    }
+}
+
+/**
+ * Update edit button visual state
+ * @param {string} type - 'daily' or 'weekly'
+ * @param {boolean} isEditMode - whether in edit mode
+ */
+function updateEditButtonState(type, isEditMode) {
+    const btn = type === 'daily' ? btnEditDaily : btnEditWeekly;
+    if (!btn) return;
+
+    const btnText = btn.querySelector('.edit-btn-text');
+
+    if (isEditMode) {
+        btn.classList.add('active');
+        if (btnText) btnText.textContent = '预览';
+    } else {
+        btn.classList.remove('active');
+        if (btnText) btnText.textContent = '编辑';
+    }
+}
+
+/**
+ * Update character counter
+ * @param {string} type - 'daily' or 'weekly'
+ * @param {number} count - character count
+ */
+function updateCharCounter(type, count) {
+    const counter = type === 'daily' ? dailyCharCounter : weeklyCharCounter;
+    if (!counter) return;
+
+    counter.textContent = `字数统计：${count} 字`;
+
+    // Warning for very long content
+    if (count > 5000) {
+        counter.classList.add('warning');
+    } else {
+        counter.classList.remove('warning');
+    }
+}
+
+/**
+ * Get the final report content (returns edited content if in edit mode)
+ * @param {string} type - 'daily' or 'weekly'
+ * @returns {string} - the final report content
+ */
+function getFinalReportContent(type) {
+    const isDaily = type === 'daily';
+    const editMode = isDaily ? dailyEditMode : weeklyEditMode;
+    const editTextarea = isDaily ? dailyEditTextarea : weeklyEditTextarea;
+    const cache = isDaily ? generatedDailyCache : generatedWeeklyCache;
+
+    if (editMode && editTextarea) {
+        // Return edited content
+        return editTextarea.value;
+    }
+
+    // Return cached content
+    return cache?.generatedReport || '';
+}
+
+// ===============================================
+// Edit Mode Event Listeners
+// ===============================================
+
+// Bind Edit Button Click Events
+if (btnEditDaily) {
+    btnEditDaily.addEventListener('click', () => toggleEditMode('daily'));
+}
+
+if (btnEditWeekly) {
+    btnEditWeekly.addEventListener('click', () => toggleEditMode('weekly'));
+}
+
+// Bind Textarea Input Events (for character counter)
+if (dailyEditTextarea) {
+    dailyEditTextarea.addEventListener('input', (e) => {
+        updateCharCounter('daily', e.target.value.length);
+        // Live update cache
+        if (generatedDailyCache) {
+            generatedDailyCache.generatedReport = e.target.value;
+        }
+    });
+}
+
+if (weeklyEditTextarea) {
+    weeklyEditTextarea.addEventListener('input', (e) => {
+        updateCharCounter('weekly', e.target.value.length);
+        // Live update cache
+        if (generatedWeeklyCache) {
+            generatedWeeklyCache.generatedReport = e.target.value;
+        }
+    });
+}
+
+// ===============================================
+// Override Save Functions to Use Edited Content
+// ===============================================
+
+// Extend the original saveDaily function
+const originalSaveDaily = saveDaily;
+saveDaily = async function () {
+    // If in edit mode, sync textarea content to cache first
+    if (dailyEditMode && dailyEditTextarea && generatedDailyCache) {
+        generatedDailyCache.generatedReport = dailyEditTextarea.value;
+    }
+
+    // Call original save function
+    await originalSaveDaily();
+
+    // Reset edit mode after save
+    dailyEditMode = false;
+    updateEditButtonState('daily', false);
+};
+
+// Extend the original saveWeekly function  
+const originalSaveWeekly = saveWeekly;
+saveWeekly = async function () {
+    // If in edit mode, sync textarea content to cache first
+    if (weeklyEditMode && weeklyEditTextarea && generatedWeeklyCache) {
+        generatedWeeklyCache.generatedReport = weeklyEditTextarea.value;
+    }
+
+    // Call original save function
+    await originalSaveWeekly();
+
+    // Reset edit mode after save
+    weeklyEditMode = false;
+    updateEditButtonState('weekly', false);
+};

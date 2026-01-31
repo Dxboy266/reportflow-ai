@@ -10,13 +10,15 @@ const { getDailyPrompt } = require('../prompts/dailyPrompt');
 
 // Generate Daily
 router.post('/generate-daily', async (req, res) => {
-    const { content, style } = req.body;
+    const { content, style, role } = req.body;
     const today = new Date();
     const dateStr = `${today.getMonth() + 1}月${today.getDate()}日`;
     const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     const weekday = weekdayNames[today.getDay()];
 
-    const systemPrompt = getDailyPrompt(dateStr, weekday, style);
+    // Use role parameter, default to '通用'
+    const userRole = role || '通用';
+    const systemPrompt = getDailyPrompt(dateStr, weekday, userRole, style);
 
     try {
         await streamAI(res, systemPrompt, content);

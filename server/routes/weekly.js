@@ -8,7 +8,7 @@ const { ensureDir, writeFileAsync, readFileAsync } = require('../utils/fileUtils
 
 // Generate Weekly Report
 router.post('/generate-weekly', async (req, res) => {
-    const { dates, style } = req.body;
+    const { dates, style, role } = req.body;
 
     // Fetch dailies if not provided (default logic)
     let dailyContents = [];
@@ -49,7 +49,10 @@ router.post('/generate-weekly', async (req, res) => {
     const { getWeeklyPrompt } = require('../prompts/weeklyPrompt');
 
     const emailSubjectDateStr = `周报_${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}[本周开始日]-[本周结束日]_[你的名字]`;
-    const systemPrompt = getWeeklyPrompt(emailSubjectDateStr);
+
+    // Use role parameter, default to '通用'
+    const userRole = role || '通用';
+    const systemPrompt = getWeeklyPrompt(emailSubjectDateStr, userRole);
 
     try {
         await streamAI(res, systemPrompt, dailyContents.join('\n\n'));
