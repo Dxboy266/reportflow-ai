@@ -71,8 +71,8 @@
 
 2. **启动应用**：
    ```bash
-   # 启动 server/index.js 并命名为 report-app
-   pm2 start server/index.js --name "report-app"
+   # 启动 server.js 并命名为 report-app
+   pm2 start server.js --name "report-app"
    ```
 
 3. **保存当前进程列表** (确保重启后自动启动)：

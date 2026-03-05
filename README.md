@@ -4,6 +4,21 @@
 
 ![screenshot](screenshots/main-interface.png)
 
+## ⚡ 3 分钟快速上手
+
+```bash
+git clone https://github.com/Dxboy266/reportflow-ai
+cd reportflow-ai
+npm install
+npm start
+```
+
+打开 `http://localhost:3000`，在右上角设置中填入 API Key 后即可生成日报。
+
+- 贡献指南：[`CONTRIBUTING.md`](CONTRIBUTING.md)
+- 项目规划：[`ROADMAP.md`](ROADMAP.md)
+- 部署说明：[`DEPLOY.md`](DEPLOY.md)
+
 ## ✨ 核心特性
 
 - **深度思考模式 (Thinking Mode)**  
@@ -42,7 +57,7 @@
 1. **克隆项目**
    ```bash
    git clone https://github.com/Dxboy266/reportflow-ai
-   cd ai-report-generator
+   cd reportflow-ai
    ```
 
 2. **安装依赖**
@@ -130,7 +145,7 @@
 ### 项目结构
 
 ```
-ai-report-generator/
+reportflow-ai/
 ├── main.js                 # Electron 主进程入口
 ├── server.js               # Express 服务器入口
 ├── public/                 # 前端资源

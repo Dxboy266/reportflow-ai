@@ -7,7 +7,7 @@
     "start": "node server.js",
     "app": "electron .",
     "dist": "electron-builder",
-    "dev": "node server/index.js"
+    "dev": "node server.js"
   },
   "keywords": [
     "ai",
